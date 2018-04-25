@@ -1,0 +1,257 @@
+{% extends 'base.html' %}
+
+{% block title %}출결현황{% endblock %}
+
+{% block content %}
+<style>
+  .al th { width: 3.5em; }
+  .check td { text-align: center;height: 3.5em; }
+  .check { border-spacing:0px; width: 95%; }
+  .check th, .check td { border:1px solid #c4c4c4; }
+
+  body {
+    margin: 40px 10px;
+    padding: 0;
+    font-family: "Lucida Grande",Helvetica,Arial,Verdana,sans-serif;
+    font-size: 14px;
+  }
+
+  #calendar {
+    max-width: 900px;
+    margin: 0 auto;
+  }
+
+</style>
+
+
+        <h3>'{{ unit.group }}'반 '{{ user }}님'의 개인 출석 현황표 <a href="#" onclick="resetEvent()">[reset]</a></h3>
+    <table class="check">
+        <tr class="al">
+            <th>단위기간</th>
+            <th>결석</th>
+            <th>지각</th>
+            <th>조퇴</th>
+            <th>외출</th>
+            <th>출석</th>
+        </tr>
+        <tr>
+            <td id="unit">{{ unit.unit }}</td>
+            <td><a href="#" onclick="myEveCount('AB')">[+]</a> <span id="event1">{{ absen }}</span> <a href="#" onclick="myEveRemove('AB')">[-]</a></td>
+            <td><a href="#" onclick="myEveCount('LA')">[+]</a> <span id="event2">{{ late }}</span> <a href="#" onclick="myEveRemove('LA')">[-]</a></td>
+            <td><a href="#" onclick="myEveCount('EA')">[+]</a> <span id="event3">{{ earl }}</span> <a href="#" onclick="myEveRemove('EA')">[-]</a></td>
+            <td><a href="#" onclick="myEveCount('OU')">[+]</a> <span id="event4">{{ out }}</span> <a href="#" onclick="myEveRemove('OU')">[-]</a></td>
+            <td id="unitVal"></td>
+        </tr>
+    </table>
+    <p style="margin:0">*버튼을 눌러 출결을 입력해주세요. (출석일은 자동계산됩니다.)</p>
+    <table class="check">
+        <tr>
+            <th colspan="6">이번달 훈련장려금</th>
+        </tr>
+        <tr>
+            <td>일반</td>
+            <td id="moneyVal_1"></td>
+        </tr>
+        <tr>
+            <td>취업성공패키지</td>
+            <td id="moneyVal_2"></td>
+        </tr>
+    </table>
+
+<script>
+var val, event
+event = {{late}}+{{earl}}+{{out}}
+if ( event >= 3 ) {
+    event = event / 3
+    val ={{ unit.limit }} - {{ absen }} - Math.floor(event)
+    val2 = {{ unit.unit }} - {{ absen }} - Math.floor(event)
+} else {
+    val ={{ unit.limit }} - {{ absen }}
+    val2 ={{ unit.unit }} - {{ absen }}
+}
+document.getElementById('unitVal').textContent = val2
+document.getElementById('moneyVal_1').textContent = (val * 10000)+(val * 5800)+'원'
+document.getElementById('moneyVal_2').textContent = (val * 15000)+(val * 5800)+'원'
+if ( val2 <20) {
+    document.getElementById('moneyVal_1').textContent = (val2 * 10000)+(val2 * 5800)+'원'
+    document.getElementById('moneyVal_2').textContent = (val2 * 15000)+(val2 * 5800)+'원'
+}
+
+function myEveCount(i) {
+    var xhttp = new XMLHttpRequest();
+    xhttp.onreadystatechange = function () {
+            if (this.readyState == 4 && this.status == 200) {
+                var elem_ev1, elem_ev2, elem_ev3, elem_ev4, obj
+                elem_ev1 = document.getElementById('event1')
+                elem_ev2 = document.getElementById('event2')
+                elem_ev3 = document.getElementById('event3')
+                elem_ev4 = document.getElementById('event4')
+                var obj = JSON.parse(this.responseText);
+                if (obj.myEve == 'LA') {
+                    elem_ev2.textContent = obj.myCount
+                    event = obj.myCount+obj.eaCount+obj.ouCount
+                    if ( event >= 3 ) {
+                        event = event / 3
+                        event = Math.floor(event)
+                        val = {{ unit.limit }} - obj.abCount - event
+                        val2 = {{ unit.unit }} - obj.abCount - event
+                    } else {
+                        val ={{ unit.limit }} - obj.abCount
+                        val2 = {{ unit.unit }} - obj.abCount
+                    }
+                } else if (obj.myEve == 'EA') {
+                    elem_ev3.textContent = obj.myCount
+                    event = obj.laCount+obj.myCount+obj.ouCount
+                    if ( event >= 3 ) {
+                        event = event / 3
+                        event = Math.floor(event)
+                        val ={{ unit.limit }} - obj.abCount - event
+                        val2 ={{ unit.unit }} - obj.abCount - event
+                    } else {
+                        val ={{ unit.limit }} - obj.abCount
+                        val2 ={{ unit.unit }} - obj.abCount
+                    }
+                } else if (obj.myEve == 'AB') {
+                    elem_ev1.textContent = obj.myCount
+                    event = obj.laCount+obj.eaCount+obj.ouCount
+                    if ( event >= 3 ) {
+                        event = event / 3
+                        event = Math.floor(event)
+                        val ={{ unit.limit }} - obj.myCount - event
+                        val2 ={{ unit.unit }} - obj.myCount - event
+                    } else {
+                        val ={{ unit.limit }} - obj.myCount
+                        val2 ={{ unit.unit }} - obj.myCount
+                    }
+                } else if (obj.myEve == 'OU') {
+                    elem_ev4.textContent = obj.myCount
+                    event = obj.laCount+obj.eaCount+obj.myCount
+                    if ( event >= 3 ) {
+                        event = event / 3
+                        event = Math.floor(event)
+                        val ={{ unit.limit }} - obj.abCount - event
+                        val2 ={{ unit.unit }} - obj.abCount - event
+                    } else {
+                        val ={{ unit.limit }} - obj.abCount
+                        val2 ={{ unit.unit }} - obj.abCount
+                    }
+                }
+                document.getElementById('unitVal').textContent = val2
+                if ( val2 < 20 ) {
+                    document.getElementById('moneyVal_1').textContent = (val2 * 10000)+(val2 * 5800)+'원'
+                    document.getElementById('moneyVal_2').textContent = (val2 * 15000)+(val2 * 5800)+'원'
+                }
+            }
+        };
+        xhttp.open("GET", "{% url 'ajaxcheckevent' %}?eve="+i, true);
+        xhttp.send();
+    }
+
+ function myEveRemove(j) {
+    var xhttp = new XMLHttpRequest();
+    xhttp.onreadystatechange = function () {
+            if (this.readyState == 4 && this.status == 200) {
+                var elem_ev1, elem_ev2, elem_ev3, elem_ev4, obj
+                elem_ev1 = document.getElementById('event1')
+                elem_ev2 = document.getElementById('event2')
+                elem_ev3 = document.getElementById('event3')
+                elem_ev4 = document.getElementById('event4')
+                var obj = JSON.parse(this.responseText);
+                if (obj.myReEve == 'LA') {
+                    elem_ev2.textContent = obj.myCount
+                    event = obj.myCount+obj.eaCount+obj.ouCount
+                    if ( event >= 3 ) {
+                        event = event / 3
+                        event = Math.floor(event)
+                        val = {{ unit.limit }} - obj.abCount - event
+                        val2 = {{ unit.unit }} - obj.abCount - event
+                    } else {
+                        val ={{ unit.limit }} - obj.abCount
+                        val2 = {{ unit.unit }} - obj.abCount
+                    }
+                } else if (obj.myReEve == 'EA') {
+                    elem_ev3.textContent = obj.myCount
+                    event = obj.laCount+obj.myCount+obj.ouCount
+                    if ( event >= 3 ) {
+                        event = event / 3
+                        event = Math.floor(event)
+                        val ={{ unit.limit }} - obj.abCount - event
+                        val2 ={{ unit.unit }} - obj.abCount - event
+                    } else {
+                        val ={{ unit.limit }} - obj.abCount
+                        val2 ={{ unit.unit }} - obj.abCount
+                    }
+                } else if (obj.myReEve == 'AB') {
+                    elem_ev1.textContent = obj.myCount
+                    event = obj.laCount+obj.eaCount+obj.ouCount
+                    if ( event >= 3 ) {
+                        event = event / 3
+                        event = Math.floor(event)
+                        val ={{ unit.limit }} - obj.myCount - event
+                        val2 ={{ unit.unit }} - obj.myCount - event
+                    } else {
+                        val ={{ unit.limit }} - obj.myCount
+                        val2 ={{ unit.unit }} - obj.myCount
+                    }
+                } else if (obj.myReEve == 'OU') {
+                    elem_ev4.textContent = obj.myCount
+                    event = obj.laCount+obj.eaCount+obj.myCount
+                    if ( event >= 3 ) {
+                        event = event / 3
+                        event = Math.floor(event)
+                        val ={{ unit.limit }} - obj.abCount - event
+                        val2 ={{ unit.unit }} - obj.abCount - event
+                    } else {
+                        val ={{ unit.limit }} - obj.abCount
+                        val2 ={{ unit.unit }} - obj.abCount
+                    }
+                }
+                document.getElementById('unitVal').textContent = val2
+                if ( val2 <= 20 ) {
+                    document.getElementById('moneyVal_1').textContent = (val2 * 10000)+(val2 * 5800)+'원'
+                    document.getElementById('moneyVal_2').textContent = (val2 * 15000)+(val2 * 5800)+'원'
+                }
+            }
+        };
+        xhttp.open("GET", "{% url 'ajaxremoveevent' %}?reve="+j, true);
+        xhttp.send();
+    }
+
+function resetEvent() {
+            var xhttp = new XMLHttpRequest()
+            xhttp.onreadystatechange = function() {
+                if (this.readyState == 4 && this.status == 200) {
+                    alert('초기화 되었습니다.')
+                    var elem_ev1, elem_ev2, elem_ev3, elem_ev4, obj
+                    elem_ev1 = document.getElementById('event1')
+                    elem_ev2 = document.getElementById('event2')
+                    elem_ev3 = document.getElementById('event3')
+                    elem_ev4 = document.getElementById('event4')
+                    elem_ev1.textContent = {{ absen }}
+                    elem_ev2.textContent = {{ late }}
+                    elem_ev3.textContent = {{ earl }}
+                    elem_ev4.textContent = {{ out }}
+                    event = {{late}}+{{earl}}+{{out}}
+                    if ( event >= 3 ) {
+                        event = event / 3
+                        val ={{ unit.limit }} - {{ absen }} - Math.floor(event)
+                        val2 = {{ unit.unit }} - {{ absen }} - Math.floor(event)
+                    } else {
+                        val ={{ unit.limit }} - {{ absen }}
+                        val2 ={{ unit.unit }} - {{ absen }}
+                    }
+                    document.getElementById('unitVal').textContent = val2
+                    document.getElementById('moneyVal_1').textContent = (val * 10000)+(val * 5800)+'원'
+                    document.getElementById('moneyVal_2').textContent = (val * 15000)+(val * 5800)+'원'
+                    if ( val2 <20) {
+                        document.getElementById('moneyVal_1').textContent = (val2 * 10000)+(val2 * 5800)+'원'
+                        document.getElementById('moneyVal_2').textContent = (val2 * 15000)+(val2 * 5800)+'원'
+                    }
+                }
+            }
+            xhttp.open('GET','{% url 'ajaxeventreset' %}', true);
+            xhttp.send();
+        }
+
+</script>
+{% endblock %}
